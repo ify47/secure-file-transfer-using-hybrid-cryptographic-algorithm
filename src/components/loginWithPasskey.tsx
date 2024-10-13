@@ -1,5 +1,4 @@
 "use client";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { decodeJwt } from "jose";
 import { getServerSession } from "next-auth";
 import { useSession } from "next-auth/react";
