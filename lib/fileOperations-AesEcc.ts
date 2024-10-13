@@ -16,6 +16,13 @@ export interface UploadFileResult {
   error?: string;
 }
 
+const credentials = JSON.parse(
+  Buffer.from(
+    process.env.KEYFILENAME ? process.env.KEYFILENAME : "",
+    "base64"
+  ).toString()
+);
+
 const projectId = process.env.PROJECT_ID;
 const keyFilename = process.env.KEYFILENAME;
 const bucketName = process.env.BUCKET_NAME_ECC;
@@ -54,7 +61,13 @@ export const UploadFile = async (
       aesKey
     );
 
-    const storage = new Storage({ projectId, keyFilename });
+    const storage = new Storage({
+      projectId: credentials.projectId,
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+    });
     const bucket = storage.bucket(bucketName as string);
 
     // Create a PassThrough stream for streaming encrypted content
@@ -119,7 +132,13 @@ export const UploadFile = async (
 
 export const FetchFiles = async (userEmail: string) => {
   try {
-    const storage = new Storage({ projectId, keyFilename });
+    const storage = new Storage({
+      projectId: credentials.projectId,
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+    });
     const bucket = storage.bucket(bucketName as string);
     const [files] = await bucket.getFiles();
 
@@ -165,7 +184,13 @@ export const DownloadFile = async (
   eccKey: string
 ) => {
   try {
-    const storage = new Storage({ projectId, keyFilename });
+    const storage = new Storage({
+      projectId: credentials.projectId,
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+    });
     const bucket = storage.bucket(bucketName as string);
     const file = bucket.file(encryptedFileName);
     const exists = await file.exists();

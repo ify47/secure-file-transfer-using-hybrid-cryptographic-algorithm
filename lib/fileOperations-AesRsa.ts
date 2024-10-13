@@ -12,8 +12,15 @@ import {
 import { PassThrough } from "stream";
 import { UploadFileResult } from "./fileOperations-AesEcc";
 
+const credentials = JSON.parse(
+  Buffer.from(
+    process.env.KEYFILENAME ? process.env.KEYFILENAME : "",
+    "base64"
+  ).toString()
+);
+
 const projectId = process.env.PROJECT_ID;
-const keyFilename = process.env.KEYFILENAME;
+const keyFilename = credentials;
 const bucketName = process.env.BUCKET_NAME;
 
 const FILE_SIZE_LIMIT = 25 * 1024 * 1024; // 25 MB
@@ -36,7 +43,13 @@ export const UploadFile = async (
       };
     }
 
-    const storage = new Storage({ projectId, keyFilename });
+    const storage = new Storage({
+      projectId: credentials.projectId,
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+    });
     const bucket = storage.bucket(bucketName as string);
 
     // Generate an AES encryption key for the file content
@@ -117,7 +130,13 @@ export const UploadFile = async (
 
 export const FetchFiles = async (userEmail: string) => {
   try {
-    const storage = new Storage({ projectId, keyFilename });
+    const storage = new Storage({
+      projectId: credentials.projectId,
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+    });
     const bucket = storage.bucket(bucketName as string);
     const [files] = await bucket.getFiles();
 
@@ -163,7 +182,13 @@ export const DownloadFile = async (
   firstPartKey: string
 ) => {
   try {
-    const storage = new Storage({ projectId, keyFilename });
+    const storage = new Storage({
+      projectId: credentials.projectId,
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+    });
     const bucket = storage.bucket(bucketName as string);
     const file = bucket.file(encryptedFileName);
     const exists = await file.exists();

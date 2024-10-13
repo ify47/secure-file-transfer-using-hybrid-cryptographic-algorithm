@@ -2,8 +2,25 @@
 import { KeyManagementServiceClient } from "@google-cloud/kms";
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
+const credentials = JSON.parse(
+  Buffer.from(
+    process.env.KEYFILENAME ? process.env.KEYFILENAME : "",
+    "base64"
+  ).toString()
+);
+
 const kmsClient = new KeyManagementServiceClient({
-  keyFilename: process.env.KEYFILENAME,
+  credentials: {
+    client_email: credentials.client_email,
+    private_key: credentials.private_key,
+  },
+});
+
+const secretManagerClient = new SecretManagerServiceClient({
+  credentials: {
+    client_email: credentials.client_email,
+    private_key: credentials.private_key,
+  },
 });
 
 export async function getPublicKey() {
@@ -66,10 +83,6 @@ export async function getDecryptedAesKey(rsaEncryptedKey: string) {
 }
 
 export async function accessEccPublic() {
-  const secretManagerClient = new SecretManagerServiceClient({
-    keyFilename: process.env.KEYFILENAME,
-  });
-
   const [version] = await secretManagerClient.accessSecretVersion({
     name: "projects/school-projecyt/secrets/ecck/versions/1",
   });
@@ -78,10 +91,6 @@ export async function accessEccPublic() {
   return payload;
 }
 export async function accessEccPrivate() {
-  const secretManagerClient = new SecretManagerServiceClient({
-    keyFilename: process.env.KEYFILENAME,
-  });
-
   const [version] = await secretManagerClient.accessSecretVersion({
     name: "projects/school-projecyt/secrets/ecck/versions/2",
   });
