@@ -12,6 +12,7 @@ import {
 import { get } from "@github/webauthn-json";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import LoadingSpin from "@/components/loadingSpin";
 
 export default function RecievedOne() {
   const { data: session } = useSession();
@@ -27,6 +28,7 @@ export default function RecievedOne() {
       }[]
     | undefined
   >([]);
+  const [loading, setLoading] = useState<{ [key: string]: boolean }>({}); // Loading state per file
 
   useEffect(() => {
     // Fetch the list of files for the logged-in user when the component mounts
@@ -54,6 +56,7 @@ export default function RecievedOne() {
     originalName: string;
     encryptedName: string;
   }) => {
+    setLoading((prev) => ({ ...prev, [selectedFile.encryptedName]: true }));
     if (!session || session?.user?.passkeydone === false) {
       toast("Cant download until you verify passkey!", {
         position: "top-center",
@@ -66,6 +69,7 @@ export default function RecievedOne() {
         theme: "light",
         transition: Bounce,
       });
+      setLoading((prev) => ({ ...prev, [selectedFile.encryptedName]: false }));
       return;
     } else {
       const decryptionKey = keyInput[selectedFile.encryptedName];
@@ -81,6 +85,10 @@ export default function RecievedOne() {
             toast.error(error, {
               theme: "colored",
             });
+            setLoading((prev) => ({
+              ...prev,
+              [selectedFile.encryptedName]: false,
+            }));
             return;
           }
 
@@ -100,10 +108,18 @@ export default function RecievedOne() {
             if (session?.user?.id === hankoUserId) {
             } else {
               alert("Verification failed: User ID mismatch");
+              setLoading((prev) => ({
+                ...prev,
+                [selectedFile.encryptedName]: false,
+              }));
               return;
             }
           } catch (error) {
             alert("Error during passkey verification:");
+            setLoading((prev) => ({
+              ...prev,
+              [selectedFile.encryptedName]: false,
+            }));
             return;
           }
 
@@ -137,6 +153,7 @@ export default function RecievedOne() {
         }
       }
     }
+    setLoading((prev) => ({ ...prev, [selectedFile.encryptedName]: false }));
   };
 
   return (
@@ -202,7 +219,11 @@ export default function RecievedOne() {
                       onClick={() => handleDownload(item)}
                       className="py-1.5 px-3 text-gray-600 hover:text-gray-500 duration-150 hover:bg-gray-50 border rounded-lg"
                     >
-                      Download
+                      {loading[item.encryptedName] ? (
+                        <LoadingSpin className="text-black" />
+                      ) : (
+                        "Download"
+                      )}
                     </button>
                   </td>
                 </tr>

@@ -11,7 +11,6 @@ import {
 } from "./encryptionAes";
 import { PassThrough } from "stream";
 import { UploadFileResult } from "./fileOperations-AesEcc";
-import { error } from "console";
 
 const credentials = JSON.parse(
   Buffer.from(
@@ -21,26 +20,25 @@ const credentials = JSON.parse(
 );
 
 const bucketName = process.env.BUCKET_NAME;
-const FILE_SIZE_LIMIT = 25 * 1024 * 1024; // 25 MB
+const FILE_SIZE_LIMIT = 4 * 1024 * 1024; // 4 MB
 
 export const UploadFile = async (
   form: FormData,
   userEmail: string,
   senderName: string
-) => {
+): Promise<UploadFileResult> => {
   try {
-    const clientFile = form.get("file") as File;
-    if (!clientFile) return { error: "No file provided" };
-    if (clientFile.size < 1) return { error: "File is empty" };
-
+    const file = form.get("file") as File;
+    if (!file) throw new Error("No file provided");
+    if (file.size < 1) throw new Error("File is empty");
     // Check if file exceeds the size limit of 25MB
-    if (clientFile.size > FILE_SIZE_LIMIT) {
+    if (file.size > FILE_SIZE_LIMIT) {
       return {
         success: false,
-        error: "File exceeds the maximum allowed size of 25MB",
+        error:
+          "Demo Project:File exceeds the maximum allowed size of 4MB(For now)",
       };
     }
-
     const storage = new Storage({
       projectId: credentials.projectId,
       credentials: {
@@ -49,36 +47,61 @@ export const UploadFile = async (
       },
     });
     const bucket = storage.bucket(bucketName as string);
-
     // Generate an AES encryption key for the file content
     const aesKey = generateKey();
-
-    // Encrypt the content on the server-side
-    const buffer = await clientFile.arrayBuffer();
+    // Split the RSA-encrypted key into two parts
+    const rsaEncryptedKey = await encryptWithPublicKey(aesKey);
+    const firstPartKey = rsaEncryptedKey.slice(0, 16); // First 16 characters for user
+    const remainingKey = rsaEncryptedKey.slice(16); // Remaining part to be encrypted
+    // Encrypt the remaining part using AES-256-CBC
+    const encrypted = await generateShortKey(remainingKey);
+    console.log("enc", encrypted);
+    // Create a PassThrough stream for streaming the encrypted content
+    const stream = new PassThrough();
+    // Define the initial file name without numbering
+    let baseFileName = `${file.name}.enc`;
+    let fileNumber = 0;
+    let encryptedFileName = baseFileName;
+    // Loop to find an available file name
+    let fileExists = await bucket.file(encryptedFileName).exists();
+    while (fileExists[0]) {
+      fileNumber += 1;
+      encryptedFileName = `${file.name}(${fileNumber}).enc`;
+      fileExists = await bucket.file(encryptedFileName).exists();
+    }
+    // Create a write stream to the Google Cloud Storage bucket
+    const writeStream = bucket.file(encryptedFileName).createWriteStream({
+      resumable: false, // Non-resumable for simplicity
+      metadata: {
+        contentType: file.type, // MIME type
+        metadata: {
+          originalName: file.name,
+          userEmail: userEmail,
+          senderName: senderName,
+          fileType: file.type,
+          fileSize: file.size,
+          uploadTime: new Date().toISOString(),
+          encrypted: encrypted,
+        },
+      },
+    });
+    // Convert the file buffer to encrypted content and pipe it to the write stream
+    const buffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
     const encryptedContent = encryptContent(uint8Array, aesKey); // Encrypt content
-
-    // Create a unique encrypted file name for storage
-    const encryptedFileName = `${clientFile.name}.enc`;
-
-    // Get the Google Cloud Storage file object
-    const bucketFile = bucket.file(encryptedFileName);
-
-    // Create signed URL for direct upload to GCS
-    const [signedUrl] = await bucketFile.getSignedUrl({
-      version: "v4",
-      action: "write",
-      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-      contentType: "application/octet-stream", // Adjust if necessary
+    // Pipe the PassThrough stream into Google Cloud Storage's write stream
+    stream.write(Buffer.from(encryptedContent, "utf8"));
+    stream.end();
+    stream.pipe(writeStream);
+    // Return the first 16 digits of the RSA-encrypted AES key to the user
+    return new Promise((resolve, reject) => {
+      writeStream.on("finish", () => {
+        resolve({ success: true, key: firstPartKey });
+      });
+      writeStream.on("error", (error: any) => {
+        reject({ success: false, error: error.message });
+      });
     });
-
-    // Return the signed URL and the encrypted content to the client
-    return {
-      success: true,
-      key: aesKey,
-      signedUrl: signedUrl,
-      encryptedContent: encryptedContent,
-    };
   } catch (error) {
     if (error instanceof Error) {
       console.error(error.message);

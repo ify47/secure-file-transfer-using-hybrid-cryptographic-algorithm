@@ -7,6 +7,7 @@ import { Bounce, toast, ToastContainer } from "react-toastify";
 import AlertNoVerification from "./alertNoVerification";
 import Image from "next/image";
 import copyIcon from "../assets/copy-svgrepo-com.svg";
+import LoadingSpin from "./loadingSpin";
 
 export default function UserFileSharingEcc() {
   const { data: session } = useSession();
@@ -20,8 +21,10 @@ export default function UserFileSharingEcc() {
   >([]);
 
   const [selectedUser, setSelectedUser] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = async (form: FormData) => {
+    setLoading(true);
     if (!session || session?.user?.passkeydone === false) {
       toast("Cant send until you verify passkey!", {
         position: "top-center",
@@ -34,6 +37,7 @@ export default function UserFileSharingEcc() {
         theme: "light",
         transition: Bounce,
       });
+      setLoading(false);
       return;
     } else {
       if (selectedUser) {
@@ -68,6 +72,7 @@ export default function UserFileSharingEcc() {
         alert("Please select a user to upload the file to.");
       }
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -136,6 +141,7 @@ export default function UserFileSharingEcc() {
             type="submit"
             className="mt-2 p-2 bg-blue-500 text-white rounded"
           >
+            {loading && <LoadingSpin />}
             Upload File
           </button>
         </form>

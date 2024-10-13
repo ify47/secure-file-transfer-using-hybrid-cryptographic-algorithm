@@ -11,13 +11,17 @@ import {
 } from "@github/webauthn-json";
 import { Bounce, toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useState } from "react";
+import LoadingSpin from "@/components/loadingSpin";
 
 export default function SettingsOne() {
   const { data: session, update } = useSession();
+  const [loading, setLoading] = useState(false);
 
   // Function to handle passkey verification
 
   async function registerPasskey() {
+    setLoading(true);
     if (!session || session?.user?.passkeydone) {
       toast("Device Already Authenticated!", {
         position: "top-center",
@@ -30,6 +34,7 @@ export default function SettingsOne() {
         theme: "light",
         transition: Bounce,
       });
+      setLoading(false);
       return;
     } else {
       const createOptions = await startServerPasskeyRegistration();
@@ -64,6 +69,7 @@ export default function SettingsOne() {
         transition: Bounce,
       });
     }
+    setLoading(false);
   }
 
   return (
@@ -75,9 +81,13 @@ export default function SettingsOne() {
         className="p-2 bg-blue-500 text-white rounded"
       >
         {" "}
-        {session?.user?.passkeydone
-          ? "Contact Support to Enable Passkey "
-          : "Register New Passkey"}
+        {session?.user?.passkeydone ? (
+          "Contact Support to Enable Passkey "
+        ) : loading ? (
+          <LoadingSpin />
+        ) : (
+          "Register New Passkey"
+        )}
       </button>
     </div>
   );

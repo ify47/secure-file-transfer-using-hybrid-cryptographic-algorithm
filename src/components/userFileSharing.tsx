@@ -7,6 +7,7 @@ import { Bounce, toast, ToastContainer } from "react-toastify";
 import AlertNoVerification from "./alertNoVerification";
 import Image from "next/image";
 import copyIcon from "../assets/copy-svgrepo-com.svg";
+import LoadingSpin from "./loadingSpin";
 
 export default function UserFileSharing() {
   const { data: session } = useSession();
@@ -20,8 +21,10 @@ export default function UserFileSharing() {
   >([]);
 
   const [selectedUser, setSelectedUser] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = async (form: FormData) => {
+    setLoading(true);
     if (!session || session?.user?.passkeydone === false) {
       toast("Cant send until you verify passkey!", {
         position: "top-center",
@@ -34,6 +37,7 @@ export default function UserFileSharing() {
         theme: "light",
         transition: Bounce,
       });
+      setLoading(false);
       return;
     } else {
       if (selectedUser) {
@@ -44,20 +48,9 @@ export default function UserFileSharing() {
         );
 
         if (result.success) {
-          // Get the encrypted content and the signed URL
-          const { signedUrl, encryptedContent, key } = result;
-
-          // Upload the encrypted content to Google Cloud Storage
-          await fetch(signedUrl as string, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/octet-stream",
-            },
-            body: encryptedContent,
-          });
+          setEncryptionKey(result.key || ""); // Set the key to display
 
           // Show success toast notification
-          setEncryptionKey(key || ""); // Set the key to display
           toast("File encrypted and sent!", {
             position: "top-center",
             autoClose: 5000,
@@ -72,21 +65,14 @@ export default function UserFileSharing() {
         } else {
           // Show error toast notification
           toast.error(result.error || "Unknown error occurred", {
-            position: "top-center",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
             theme: "colored",
-            transition: Bounce,
           });
         }
       } else {
         alert("Please select a user to upload the file to.");
       }
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -153,8 +139,9 @@ export default function UserFileSharing() {
           <input type="file" name="file" required />
           <button
             type="submit"
-            className="mt-2 p-2 bg-blue-500 text-white rounded"
+            className="mt-2 p-2 bg-blue-500 text-white rounded inline-flex items-center"
           >
+            {loading && <LoadingSpin />}
             Upload File
           </button>
         </form>
