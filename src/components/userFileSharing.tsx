@@ -104,17 +104,12 @@ export default function UserFileSharing() {
     });
   };
 
-  const clicking = async () => {
-    await accessEccPrivate();
-  };
-
   return (
     <div className="max-w-screen-xl mx-auto px-4 md:px-8 mt-10">
       <ToastContainer />
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Hi {session?.user?.name}</h1>
         {session?.user?.passkeydone ? "" : <AlertNoVerification />}
-        <p onClick={clicking}>click</p>
 
         <h1 className="text-2xl font-bold">
           Ready to share with someone? Let`s keep your files safe!
