@@ -29,7 +29,7 @@ export const UploadFile = async (
   senderName: string
 ) => {
   try {
-    const clientFile = form.get("file") as File; // Renamed this to `clientFile` for clarity
+    const clientFile = form.get("file") as File;
     if (!clientFile) return { error: "No file provided" };
     if (clientFile.size < 1) return { error: "File is empty" };
 
@@ -61,7 +61,7 @@ export const UploadFile = async (
     // Create a unique encrypted file name for storage
     const encryptedFileName = `${clientFile.name}.enc`;
 
-    // Get the Google Cloud Storage file object (renamed from `file` to `bucketFile`)
+    // Get the Google Cloud Storage file object
     const bucketFile = bucket.file(encryptedFileName);
 
     // Create signed URL for direct upload to GCS
