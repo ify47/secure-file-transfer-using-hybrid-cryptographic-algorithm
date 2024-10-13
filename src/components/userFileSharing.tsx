@@ -8,8 +8,6 @@ import AlertNoVerification from "./alertNoVerification";
 import Image from "next/image";
 import copyIcon from "../assets/copy-svgrepo-com.svg";
 
-import { accessEccPrivate } from "../../lib/kms";
-
 export default function UserFileSharing() {
   const { data: session } = useSession();
   const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
@@ -46,9 +44,20 @@ export default function UserFileSharing() {
         );
 
         if (result.success) {
-          setEncryptionKey(result.key || ""); // Set the key to display
+          // Get the encrypted content and the signed URL
+          const { signedUrl, encryptedContent, key } = result;
+
+          // Upload the encrypted content to Google Cloud Storage
+          await fetch(signedUrl as string, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/octet-stream",
+            },
+            body: encryptedContent,
+          });
 
           // Show success toast notification
+          setEncryptionKey(key || ""); // Set the key to display
           toast("File encrypted and sent!", {
             position: "top-center",
             autoClose: 5000,
