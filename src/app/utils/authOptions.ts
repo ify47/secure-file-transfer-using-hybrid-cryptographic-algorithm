@@ -53,9 +53,7 @@ export const authOptions: any = {
           }
 
           return user;
-        } catch (error) {
-          console.log("error ", error);
-        }
+        } catch (error) {}
       },
     }),
     PasskeyProvider({
@@ -95,7 +93,6 @@ export const authOptions: any = {
         token.email = user.email;
         token.id = user.id;
         token.passkeydone = user.passkeydone;
-        console.log("token", token);
       }
       if (trigger === "update" && session?.user?.passkeydone !== undefined) {
         token.passkeydone = session.user.passkeydone; // Only update passkeydone field
@@ -109,8 +106,6 @@ export const authOptions: any = {
         session.user.id = token.id;
         session.user.passkeydone =
           token.passkeydone ?? session.user.passkeydone;
-
-        console.log("sessionn23", session);
       }
 
       return session;

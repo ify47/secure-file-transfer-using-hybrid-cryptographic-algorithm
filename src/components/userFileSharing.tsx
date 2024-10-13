@@ -46,7 +46,6 @@ export default function UserFileSharing() {
         );
 
         if (result.success) {
-          console.log(result);
           setEncryptionKey(result.key || ""); // Set the key to display
 
           // Show success toast notification
@@ -63,7 +62,7 @@ export default function UserFileSharing() {
           });
         } else {
           // Show error toast notification
-          toast(result.error || "Unknown error occurred", {
+          toast.error(result.error || "Unknown error occurred", {
             position: "top-center",
             autoClose: 5000,
             hideProgressBar: false,
@@ -71,7 +70,7 @@ export default function UserFileSharing() {
             pauseOnHover: true,
             draggable: true,
             progress: undefined,
-            theme: "light",
+            theme: "colored",
             transition: Bounce,
           });
         }

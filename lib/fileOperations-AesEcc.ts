@@ -8,10 +8,9 @@ import {
   generateKey,
 } from "./encryptionAesECC";
 import { PassThrough } from "stream";
-import { error } from "console";
 
 export interface UploadFileResult {
-  success: boolean;
+  success?: boolean;
   key?: string;
   error?: string;
 }
@@ -23,8 +22,6 @@ const credentials = JSON.parse(
   ).toString()
 );
 
-const projectId = process.env.PROJECT_ID;
-const keyFilename = process.env.KEYFILENAME;
 const bucketName = process.env.BUCKET_NAME_ECC;
 
 const FILE_SIZE_LIMIT = 25 * 1024 * 1024; // 25MB
@@ -36,8 +33,8 @@ export const UploadFile = async (
 ): Promise<UploadFileResult> => {
   try {
     const file = form.get("file") as File;
-    if (!file) throw new Error("No file provided");
-    if (file.size < 1) throw new Error("File is empty");
+    if (!file) return { error: "No file provided" };
+    if (file.size < 1) return { error: "File is empty" };
 
     // Check if file exceeds the size limit of 25MB
     if (file.size > FILE_SIZE_LIMIT) {
@@ -54,7 +51,6 @@ export const UploadFile = async (
     // Generate an AES encryption key for the file content
     const aesKey = generateKey();
     const encryptedContent = encryptContent(uint8Array, aesKey);
-    console.log("AES key for encryption:", aesKey);
 
     // Encrypt the AES key using ECC
     const { encryptedAESKey, ephemeralPublicKey } = await encryptAESKeyWithECC(
@@ -196,7 +192,7 @@ export const DownloadFile = async (
     const exists = await file.exists();
 
     if (!exists[0]) {
-      throw new Error("File does not exist");
+      return { error: "File does not exist" };
     }
 
     const [encryptedContent] = await file.download();
@@ -210,10 +206,8 @@ export const DownloadFile = async (
     try {
       aesKey = await decryptAESKeyWithECC(eccKey, ephemeralPublicKey);
     } catch (error) {
-      throw new Error("Invalid decryption key");
+      return { error: "Invalid decryption key" };
     }
-
-    console.log("aesdec", aesKey);
 
     // Decrypt the file content using the AES key
     let decryptedContent;
@@ -223,7 +217,7 @@ export const DownloadFile = async (
         aesKey
       );
     } catch (error) {
-      throw new Error("Failed to decrypt file");
+      return { error: "Failed to decrypt file" };
     }
 
     // Retrieve the original file name from metadata
@@ -237,9 +231,10 @@ export const DownloadFile = async (
   } catch (error) {
     if (error instanceof Error) {
       console.error("Error during file download:", error.message);
-      throw new Error(
-        "Unable to retrieve or decrypt file. Please check the key and try again."
-      );
+      return {
+        error:
+          "Unable to retrieve or decrypt file. Please check the key and try again.",
+      };
     } else {
       console.error("An unknown error occurred");
       return { success: false, error: "Unknown error" };

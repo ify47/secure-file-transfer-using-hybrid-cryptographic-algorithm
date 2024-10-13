@@ -31,7 +31,6 @@ export async function getPublicKey() {
     name: keyName,
   });
 
-  console.log(`public: ${publicKey.pem}`);
   return publicKey.pem;
 }
 
@@ -46,7 +45,7 @@ export async function decryptWithKMS(encryptedData: string) {
   });
 
   const plaintext = result.plaintext?.toString();
-  console.log(`Decrypted data: ${plaintext}`);
+
   return plaintext;
 }
 
@@ -96,7 +95,6 @@ export async function accessEccPrivate() {
   });
 
   const payload = Buffer.from(version.payload?.data as Buffer).toString("utf8");
-  console.log(payload);
 
   return payload;
 }

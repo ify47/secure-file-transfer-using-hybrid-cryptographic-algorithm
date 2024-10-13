@@ -26,7 +26,7 @@ const passkeyApi = tenant({
 
 export async function startServerPasskeyRegistration() {
   const session = (await getServerSession(authOptions)) as Sess;
-  console.log("sessionsss", session);
+
   const sessionUser = session?.user;
 
   const createOptions = await passkeyApi.registration.initialize({
@@ -53,13 +53,11 @@ export async function finishServerPasskeyLogin(options: any) {
   const response = await passkeyApi.login.finalize(options);
 
   // Log the response for debugging
-  console.log("Hanko response:", response);
+  // console.log("Hanko response:", response);
 
   if (response.token) {
     // Use the JWKS URL to verify the JWT
     const { payload } = await jwtVerify(response.token, jwks);
-
-    console.log("Decoded JWT payload:", payload);
 
     // Return the payload (where 'sub' is typically the userId)
     return { token: payload };

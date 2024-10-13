@@ -44,7 +44,6 @@ export default function UserFileSharingEcc() {
         );
 
         if (result.success) {
-          console.log(result);
           setEncryptionKey(result.key || ""); // Set the key to display
 
           // Show success toast notification
@@ -61,7 +60,9 @@ export default function UserFileSharingEcc() {
           });
         } else {
           // Show error toast notification
-          toast(result.error || "Unknown error occurred");
+          toast.error(result.error || "Unknown error occurred", {
+            theme: "colored",
+          });
         }
       } else {
         alert("Please select a user to upload the file to.");

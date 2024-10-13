@@ -58,9 +58,7 @@ export default function RegisterForm() {
         router.push("/login");
       } else {
       }
-    } catch (error) {
-      console.log("error", error);
-    }
+    } catch (error) {}
   };
 
   return (

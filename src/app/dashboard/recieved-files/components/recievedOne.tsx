@@ -72,15 +72,15 @@ export default function RecievedOne() {
       if (selectedFile && decryptionKey) {
         try {
           // Download the file with the provided first 16 characters of the key
-          const { content, originalFileName } = await DownloadFile(
+          const { content, originalFileName, error } = await DownloadFile(
             selectedFile.encryptedName,
             decryptionKey // Pass the first part of the key
           );
 
           if (!content) {
-            alert(
-              "Failed to decrypt file. Please ensure you have entered the correct key."
-            );
+            toast.error(error, {
+              theme: "colored",
+            });
             return;
           }
 
@@ -103,7 +103,7 @@ export default function RecievedOne() {
               return;
             }
           } catch (error) {
-            console.error("Error during passkey verification:", error);
+            alert("Error during passkey verification");
             return;
           }
 
