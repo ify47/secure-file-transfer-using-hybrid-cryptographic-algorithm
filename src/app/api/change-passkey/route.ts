@@ -4,7 +4,7 @@ import User from "../../../../models/user";
 import { getServerSession } from "next-auth";
 import { Sess } from "../../../../lib/passkey";
 import { authOptions } from "@/app/utils/authOptions";
-export const dynamic = "force-dynamic";
+
 export async function GET() {
   const session = (await getServerSession(authOptions)) as Sess;
   await connectMongoDB();
